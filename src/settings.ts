@@ -117,11 +117,17 @@ export class NanoBananaSettingTab extends PluginSettingTab {
       );
 
     const providerConfig = PROVIDER_CONFIGS[this.plugin.settings.selectedProvider];
+    const promptModelOptions: Record<string, string> = {};
+    for (const m of providerConfig.models) promptModelOptions[m] = m;
+    // Keep the currently saved value selectable even if it's not in the suggested list
+    if (this.plugin.settings.promptModel && !promptModelOptions[this.plugin.settings.promptModel]) {
+      promptModelOptions[this.plugin.settings.promptModel] = `${this.plugin.settings.promptModel} (custom)`;
+    }
     new Setting(containerEl)
       .setName('Prompt model')
-      .setDesc(`Model to use for prompt generation. Suggestions: ${providerConfig.models.join(', ')}`)
-      .addText(text => text
-        .setPlaceholder(providerConfig.defaultModel)
+      .setDesc('Model to use for prompt generation (text). Pick from the list to avoid typos.')
+      .addDropdown(dropdown => dropdown
+        .addOptions(promptModelOptions)
         .setValue(this.plugin.settings.promptModel)
         .onChange(async (value) => {
           this.plugin.settings.promptModel = value;
@@ -132,11 +138,22 @@ export class NanoBananaSettingTab extends PluginSettingTab {
     // ==================== Image Generation Section ====================
     new Setting(containerEl).setName('Image generation').setHeading();
 
+    const imageModelOptions: Record<string, string> = {
+      'gemini-3-pro-image-preview': 'Nano Banana Pro · gemini-3-pro-image-preview (4K, high quality) ★recommended',
+      'gemini-3-pro-image': 'Nano Banana Pro · gemini-3-pro-image (4K)',
+      'gemini-3.1-flash-image': 'Flash 3.1 · gemini-3.1-flash-image (4K, fast)',
+      'gemini-3.1-flash-image-preview': 'Flash 3.1 preview · gemini-3.1-flash-image-preview (4K)',
+      'gemini-2.5-flash-image': 'Flash 2.5 · gemini-2.5-flash-image (cheap · 1K/2K only, no 4K)',
+    };
+    // Keep the currently saved value selectable even if it's not in the list
+    if (this.plugin.settings.imageModel && !imageModelOptions[this.plugin.settings.imageModel]) {
+      imageModelOptions[this.plugin.settings.imageModel] = `${this.plugin.settings.imageModel} (custom)`;
+    }
     new Setting(containerEl)
       .setName('Image model')
-      .setDesc('Google Gemini model for image generation. Must support image output.')
-      .addText(text => text
-        .setPlaceholder('gemini-3-pro-image-preview')
+      .setDesc('Google Gemini image model. Pick from the list. Note: 4K is supported by gemini-3 models only (2.5-flash-image is 1K/2K).')
+      .addDropdown(dropdown => dropdown
+        .addOptions(imageModelOptions)
         .setValue(this.plugin.settings.imageModel)
         .onChange(async (value) => {
           this.plugin.settings.imageModel = value;
